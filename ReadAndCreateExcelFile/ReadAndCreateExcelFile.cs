@@ -10,19 +10,19 @@ using System.Text;
 
 namespace ReadAndCreateExcelFile {
     class UserDetails {
-        internal int Id { get; set; }
+        public int Id { get; set; }
 
-        internal string Name { get; set; }
+        public string Name { get; set; }
 
-        internal string City { get; set; }
+        public string City { get; set; }
 
-        internal string Country { get; set; }
+        public string Country { get; set; }
     }
 
     class ReadAndCreateExcelFile {
         static void Main() {
-            //WriteExcelFile();
-            ReadExcelFile();
+            WriteExcelFile();
+            //ReadExcelFile();
 
             Console.ReadKey();
         }
@@ -31,60 +31,56 @@ namespace ReadAndCreateExcelFile {
         /// Метод создает Excel-файл.
         /// </summary>
         static void WriteExcelFile() {
-            try {
-                List<UserDetails> persons = new List<UserDetails>() {
-               new UserDetails() { Id = 1001, Name = "ABCD", City = "City1", Country = "USA" },
-               new UserDetails() { Id = 1002, Name = "PQRS", City = "City2", Country = "INDIA" },
-               new UserDetails() { Id = 1003, Name = "XYZZ", City = "City3", Country = "CHINA" },
-               new UserDetails() { Id = 1004, Name = "LMNO", City = "City4", Country = "UK" },
+            List<UserDetails> persons = new List<UserDetails>()
+            {
+               new UserDetails() {Id=1001, Name="ABCD", City ="City1", Country="USA"},
+               new UserDetails() {Id=1002, Name="PQRS", City ="City2", Country="INDIA"},
+               new UserDetails() {Id=1003, Name="XYZZ", City ="City3", Country="CHINA"},
+               new UserDetails() {Id=1004, Name="LMNO", City ="City4", Country="UK"},
           };
 
-                DataTable table = (DataTable)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(persons), typeof(DataTable));
+            DataTable table = (DataTable)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(persons), (typeof(DataTable)));
 
-                using (SpreadsheetDocument document = SpreadsheetDocument.Create(@"c:\test_excel\TestFile.xlsx", SpreadsheetDocumentType.Workbook)) {
-                    WorkbookPart workbookPart = document.AddWorkbookPart();
-                    workbookPart.Workbook = new Workbook();
+            using (SpreadsheetDocument document = SpreadsheetDocument.Create(@"c:\test_excel\TestFile.xlsx", SpreadsheetDocumentType.Workbook)) {
+                WorkbookPart workbookPart = document.AddWorkbookPart();
+                workbookPart.Workbook = new Workbook();
 
-                    WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-                    var sheetData = new SheetData();
-                    worksheetPart.Worksheet = new Worksheet(sheetData);
+                WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                var sheetData = new SheetData();
+                worksheetPart.Worksheet = new Worksheet(sheetData);
 
-                    Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
-                    Sheet sheet = new Sheet() { Id = workbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Sheet1" };
+                Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
+                Sheet sheet = new Sheet() { Id = workbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Sheet1" };
 
-                    sheets.Append(sheet);
+                sheets.Append(sheet);
 
-                    Row headerRow = new Row();
+                Row headerRow = new Row();
 
-                    List<string> columns = new List<string>();
-                    foreach (DataColumn column in table.Columns) {
-                        columns.Add(column.ColumnName);
+                List<String> columns = new List<string>();
+                foreach (System.Data.DataColumn column in table.Columns) {
+                    columns.Add(column.ColumnName);
 
+                    Cell cell = new Cell();
+                    cell.DataType = CellValues.String;
+                    cell.CellValue = new CellValue(column.ColumnName);
+                    headerRow.AppendChild(cell);
+                }
+
+                sheetData.AppendChild(headerRow);
+
+                foreach (DataRow dsrow in table.Rows) {
+                    Row newRow = new Row();
+                    foreach (String col in columns) {
                         Cell cell = new Cell();
                         cell.DataType = CellValues.String;
-                        cell.CellValue = new CellValue(column.ColumnName);
-                        headerRow.AppendChild(cell);
+                        cell.CellValue = new CellValue(dsrow[col].ToString());
+                        newRow.AppendChild(cell);
                     }
 
-                    sheetData.AppendChild(headerRow);
-
-                    foreach (DataRow dsrow in table.Rows) {
-                        Row newRow = new Row();
-                        foreach (string col in columns) {
-                            Cell cell = new Cell();
-                            cell.DataType = CellValues.String;
-                            cell.CellValue = new CellValue(dsrow[col].ToString());
-                            newRow.AppendChild(cell);
-                        }
-
-                        sheetData.AppendChild(newRow);
-                    }
-
-                    workbookPart.Workbook.Save();
+                    sheetData.AppendChild(newRow);
                 }
-            }
-            catch (Exception ex) {
-                throw new Exception(ex.Message.ToString());
+
+                workbookPart.Workbook.Save();
             }
         }
 
